@@ -61,6 +61,7 @@ public enum MimeTypes
     [Description("image/jpeg")] jpeg,
     [Description("image/jpeg")] jpg,
     [Description("application/x-javascript")] js,
+    [Description("application/json")] json,
     [Description("audio/midi")] kar,
     [Description("application/x-latex")] latex,
     [Description("application/octet-stream")] lha,
