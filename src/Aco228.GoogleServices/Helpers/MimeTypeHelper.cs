@@ -6,6 +6,15 @@ namespace Aco228.GoogleServices.Helpers;
 
 public static class MimeTypeHelper
 {
+    public static string? GetMimeTypeFromUrl(string url)
+    {
+        if(string.IsNullOrEmpty(url))
+            return null;
+        
+        var extension = url.Split('?').First().Split('.').Last();
+        return GetMimeStringType(extension);
+    }
+    
     public static string? GetMimeStringType(string extension)
     {
         var mimeType = GetMimeType(extension);
