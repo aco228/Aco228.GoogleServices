@@ -1,22 +1,19 @@
-﻿using Aco228.Common.Helpers;
-
+﻿
 namespace Aco228.GoogleServices.Models;
 
 public class GoogleSetupOptions
 {
-    public string ServiceAccountCredentialsName { get; set; }
+    public string ProjectId { get; set; }
+    public string ServiceAccountCredentialsPath { get; set; }
 
     public string GetGoogleCredentialsPath()
     {
-        if (string.IsNullOrEmpty(ServiceAccountCredentialsName))
+        if (string.IsNullOrEmpty(ServiceAccountCredentialsPath))
             throw new ArgumentNullException($"Credential name is null");
 
-        if (!ServiceAccountCredentialsName.EndsWith(".json"))
-            ServiceAccountCredentialsName += ".json";
+        if (!ServiceAccountCredentialsPath.EndsWith(".json"))
+            ServiceAccountCredentialsPath += ".json";
         
-        if(!AssemblyFileLocator.TryFindAssemblyFile(ServiceAccountCredentialsName, out var fileInfo))
-            throw new ArgumentNullException($"Credential file {ServiceAccountCredentialsName} not found");
-        
-        return fileInfo.FullName;
+        return ServiceAccountCredentialsPath;
     }
 }
