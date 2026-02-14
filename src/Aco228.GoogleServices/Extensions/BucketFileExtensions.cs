@@ -6,6 +6,11 @@ namespace Aco228.GoogleServices.Extensions;
 
 public static class BucketFileExtensions
 {
+    public static string GetUrl(this BucketFile bucketFile)
+    {
+        return $"https://storage.googleapis.com/{bucketFile.BucketName}/{bucketFile.FileName}";
+    }
+    
     public static Task<string> GetTextAsync(this BucketFile bucketFile)
     {
         var httpClientFactory = ServiceProviderHelper.GetService<IHttpClientFactory>()!;
