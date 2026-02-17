@@ -4,6 +4,7 @@ using Aco228.GoogleServices.Extensions;
 using Aco228.GoogleServices.Helpers;
 using Aco228.GoogleServices.Models;
 using Google.Cloud.Storage.V1;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace Aco228.GoogleServices.Services;
 
@@ -131,7 +132,7 @@ public abstract class GoogleBucket : IGoogleBucket
 
     public async Task UploadDirectory(string directoryName, DirectoryInfo directoryInfo, int concurrency = 10)
     {
-        var files = directoryInfo.GetFiles("*.*", SearchOption.AllDirectories);
+        var files = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
         using var semaphore = new SemaphoreSlim(concurrency); // max 10 concurrent uploads
 
         var tasks = files.Select(async file =>
@@ -143,9 +144,18 @@ public abstract class GoogleBucket : IGoogleBucket
                     .Replace("\\", "/");
 
                 var objectName = $"{directoryName.TrimEnd('/')}/{relativePath}";
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(file.Name, out var contentType))
+                    contentType = "application/octet-stream";
                 
                 using var stream = file.OpenRead();
-                await Client.UploadObjectAsync(BucketName, objectName, null, stream);
+                await Client.UploadObjectAsync(
+                    BucketName, 
+                    objectName, 
+                    contentType, 
+                    stream,
+                    new UploadObjectOptions { PredefinedAcl = PredefinedObjectAcl.PublicRead }
+                );
             }
             finally
             {

@@ -18,4 +18,10 @@
       <ProjectReference Include="..\..\..\Aco228.v2.MongoDb\src\Aco228.v2.MongoDb\Aco228.MongoDb\Aco228.MongoDb.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.StaticFiles">
+        <HintPath>..\..\..\..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\10.0.2\Microsoft.AspNetCore.StaticFiles.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>
