@@ -19,6 +19,8 @@ public interface IGoogleBucket
     
     Task<bool> DeleteFileByName(string fileName);
     Task<bool> DeleteFile(BucketFile bucketFile);
+    
+    Task DeleteDirectory(string directoryName, int concurrency = 10);
     Task UploadDirectory(string directoryName, DirectoryInfo directoryInfo, int concurrency = 10);
     
     Task<List<BucketFile>> GetAllFiles();
@@ -128,6 +130,32 @@ public abstract class GoogleBucket : IGoogleBucket
             Console.WriteLine($"Google.Storage:: Could not delete {bucketFile.FileName}");
             return false;
         }
+    }
+
+    public async Task DeleteDirectory(string directoryName, int concurrency = 10)
+    {
+        var objects = Client.ListObjectsAsync(BucketName, directoryName);
+        using var semaphore = new SemaphoreSlim(concurrency);
+
+        var tasks = new List<Task>();
+        await foreach (var obj in objects)
+        {
+            var objName = obj.Name;
+            tasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    await Client.DeleteObjectAsync(BucketName, objName);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
     }
 
     public async Task UploadDirectory(string directoryName, DirectoryInfo directoryInfo, int concurrency = 10)
