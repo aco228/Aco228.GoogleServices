@@ -8,7 +8,9 @@
 
     <ItemGroup>
       <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
+      <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.32.0" />
       <PackageReference Include="Google.Cloud.Storage.V1" Version="4.14.0" />
+      <PackageReference Include="MessagePack" Version="3.1.4" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
     </ItemGroup>
