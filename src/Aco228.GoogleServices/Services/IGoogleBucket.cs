@@ -15,6 +15,7 @@ public interface IGoogleBucket
     // upload
     Task<BucketFile?> UploadFileAsync(byte[] fileBytes, string fileName);
     Task<BucketFile?> UploadFileAsync(FileInfo file, string? fileName = null);
+    Task<BucketFile?> UploadFileAsync(Stream stream, string? fileName = null);
     Task<BucketFile?> UploadStringFile(string? data, MimeTypes type = MimeTypes.json, string? fileName = null);
     
     Task<bool> DeleteFileByName(string fileName);
@@ -65,6 +66,25 @@ public abstract class GoogleBucket : IGoogleBucket
             await using FileStream fileStream = File.Open(file.FullName, FileMode.Open);
             var result = await this.UploadAndGetBucketFile(fileStream, name, mimeType);
             return result;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<BucketFile?> UploadFileAsync(Stream stream, string? fileName = null)
+    {
+        try
+        {
+            if(fileName == null)
+                fileName = $"{IdHelper.GetId()}.bin";
+            
+            var extension = fileName.Substring(fileName.LastIndexOf('.'));
+            var mimeType = MimeTypeHelper.GetMimeType(extension)!.Value;
+        
+            var file = await this.UploadAndGetBucketFile(stream, fileName, mimeType);
+            return file;
         }
         catch
         {
