@@ -104,6 +104,7 @@ public enum MimeTypes
     [Description("image/pict")] pic,
     [Description("image/pict")] pict,
     [Description("image/png")] png,
+    [Description("image/webp")] webp,
     [Description("image/x-portable-anymap")] pnm,
     [Description("image/x-macpaint")] pnt,
     [Description("image/x-macpaint")] pntg,
