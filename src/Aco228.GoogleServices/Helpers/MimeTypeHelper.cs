@@ -24,6 +24,19 @@ public static class MimeTypeHelper
         return mimeType.Value.GetMimeType();
     }
     
+    public static string? GetExtension(string? mimeType)
+    {
+        if (string.IsNullOrEmpty(mimeType))
+            return null;
+
+        // Find the enum that has a Description matching the mimeType string
+        var match = Enum.GetValues<MimeTypes>()
+            .FirstOrDefault(m => m != MimeTypes.unknown && 
+                                 m.GetAttribute<DescriptionAttribute>()?.Description == mimeType);
+
+        return match == MimeTypes.unknown ? null : match.ToString();
+    }
+    
     public static string GetMimeType(this MimeTypes mimeType) 
         => mimeType.GetAttribute<DescriptionAttribute>()!.Description;
     

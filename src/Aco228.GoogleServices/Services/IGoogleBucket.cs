@@ -16,6 +16,7 @@ public interface IGoogleBucket
     Task<BucketFile?> UploadFileAsync(byte[] fileBytes, string fileName);
     Task<BucketFile?> UploadFileAsync(FileInfo file, string? fileName = null);
     Task<BucketFile?> UploadFileAsync(Stream stream, string? fileName = null);
+    Task<BucketFile?> UploadFromUrlAsync(string url, string? fileName = null);
     Task<BucketFile?> UploadStringFile(string? data, MimeTypes type = MimeTypes.json, string? fileName = null);
     
     Task<bool> DeleteFileByName(string fileName);
@@ -48,6 +49,52 @@ public abstract class GoogleBucket : IGoogleBucket
             using var memoryStream = new MemoryStream(fileBytes);
             var file = await this.UploadAndGetBucketFile(memoryStream, fileName, mimeType);
             return file;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
+    // Add to GoogleBucket abstract class
+    public async Task<BucketFile?> UploadFromUrlAsync(string url, string? fileName = null)
+    {
+        try
+        {
+            using var httpClient = new HttpClient();
+            using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            // Try to determine filename from URL or Content-Disposition header
+            if (fileName == null)
+            {
+                var contentDisposition = response.Content.Headers.ContentDisposition?.FileNameStar
+                                         ?? response.Content.Headers.ContentDisposition?.FileName;
+
+                if (!string.IsNullOrEmpty(contentDisposition))
+                {
+                    fileName = contentDisposition.Trim('"');
+                }
+                else
+                {
+                    // Extract from URL path
+                    var uri = new Uri(url);
+                    var pathSegment = uri.Segments.LastOrDefault()?.Trim('/');
+                
+                    if (!string.IsNullOrEmpty(pathSegment) && pathSegment.Contains('.'))
+                        fileName = pathSegment;
+                    else
+                    {
+                        // Fall back to content type
+                        var contentType = response.Content.Headers.ContentType?.MediaType;
+                        var ext = MimeTypeHelper.GetExtension(contentType) ?? "bin";
+                        fileName = $"{IdHelper.GetId()}.{ext}";
+                    }
+                }
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            return await UploadFileAsync(stream, fileName);
         }
         catch
         {
