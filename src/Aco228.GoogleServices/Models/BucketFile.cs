@@ -6,4 +6,5 @@ public class BucketFile
     public required MimeTypes MimeType { get; set; }
     public string FileName { get; set; }
     public ulong Size { get; set; }
+    public string? ExternalReference { get; set; }
 }
