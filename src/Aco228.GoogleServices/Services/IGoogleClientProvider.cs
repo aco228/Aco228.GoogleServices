@@ -2,6 +2,7 @@
 using Aco228.GoogleServices.Models;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Http;
+using Google.Cloud.SecretManager.V1;
 using Google.Cloud.Storage.V1;
 
 namespace Aco228.GoogleServices.Services;
@@ -10,6 +11,7 @@ public interface IGoogleClientProvider : ISingleton
 {
     HttpClient GetGoogleHttpClient();
     StorageClient GetStorageClient();
+    SecretManagerServiceClient CreateSecretClient();
 }
 
 public class GoogleClientProvider : IGoogleClientProvider
@@ -33,5 +35,16 @@ public class GoogleClientProvider : IGoogleClientProvider
         GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
         var storage = StorageClient.Create(credential);
         return storage;
+    }
+
+    public SecretManagerServiceClient CreateSecretClient()
+    {
+        var json = File.ReadAllText(_googleSetupOptions.GetGoogleCredentialsPath());
+        var builder = new SecretManagerServiceClientBuilder
+        {
+            JsonCredentials = json
+        };
+
+        return builder.Build();
     }
 }
