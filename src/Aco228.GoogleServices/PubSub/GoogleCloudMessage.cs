@@ -6,7 +6,7 @@ namespace Aco228.GoogleServices.PubSub;
 public class GoogleCloudMessage
 {
     [Key(0)] public ushort Type { get; set; }
-    [Key(1)] public GoogleCloudIdentifier Sender { get; set; }
+    [Key(1)] public GoogleCloudIdentifier? Sender { get; set; }
     [Key(2)] public GoogleCloudIdentifier? Receiver { get; set; }
     [Key(3)] public DateTime CreatedUtc { get; set; }
 }

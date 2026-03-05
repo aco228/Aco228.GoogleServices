@@ -2,6 +2,7 @@
 using Aco228.GoogleServices.Models;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.PubSub.V1;
+using Google.Protobuf.WellKnownTypes;
 using MessagePack;
 
 namespace Aco228.GoogleServices.PubSub;
@@ -48,12 +49,17 @@ public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<
         }
         catch (Grpc.Core.RpcException e) when (e.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
-            await subscriberService.CreateSubscriptionAsync(
-                subscriptionName,
-                topicName,
-                pushConfig: null,
-                ackDeadlineSeconds: 60
-            );
+            await subscriberService.CreateSubscriptionAsync(new Subscription
+            {
+                Name = subscriptionName.ToString(),
+                Topic = topicName.ToString(),
+                AckDeadlineSeconds = 600, // 10 minutes
+                MessageRetentionDuration = Duration.FromTimeSpan(TimeSpan.FromMinutes(10)),
+                ExpirationPolicy = new ExpirationPolicy
+                {
+                    Ttl = Duration.FromTimeSpan(TimeSpan.FromDays(1))
+                }
+            });
         }
 
         _subscriberClient = await new SubscriberClientBuilder
@@ -80,7 +86,7 @@ public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<
                 if (message == null)
                     throw new ArgumentException("Message is null");
                 
-                if(message.Sender.ServerName.Equals(hostMachine.MachineName))
+                if(message.Sender != null && message.Sender.ServerName.Equals(hostMachine.MachineName))
                     return SubscriberClient.Reply.Ack;
                     
                 if(message.Receiver != null && message.Receiver.ServerName.Equals(hostMachine.MachineName))
