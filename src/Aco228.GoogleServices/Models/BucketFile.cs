@@ -7,4 +7,5 @@ public class BucketFile
     public string FileName { get; set; }
     public ulong Size { get; set; }
     public string? ExternalReference { get; set; }
+    public string? ThumbnailUrl { get; set; }
 }
