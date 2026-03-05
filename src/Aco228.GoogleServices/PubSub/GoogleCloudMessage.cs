@@ -22,3 +22,11 @@ public class GoogleCloudIdentifier
         ServerName = name;
     }
 }
+
+[MessagePackObject]
+public class CommandGoogleCloudMessage : GoogleCloudMessage
+{
+    [Key(4)] public required string Commmand { get; set; }
+    [Key(5)] public string? Arg1 { get; set; }
+    [Key(6)] public string? Arg2 { get; set; }
+}

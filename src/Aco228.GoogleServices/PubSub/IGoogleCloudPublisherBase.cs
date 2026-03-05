@@ -1,4 +1,6 @@
-﻿using Aco228.GoogleServices.Models;
+﻿using Aco228.Common;
+using Aco228.GoogleServices.Models;
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.PubSub.V1;
 using MessagePack;
 
@@ -30,7 +32,13 @@ public abstract class GoogleCloudPublisherBase<T> : IGoogleCloudPublisherBase<T>
             return _publisherClient;
 
         var topicName = new TopicName(_googleSetupOptions.ProjectId, TopicId);
-        _publisherClient = await PublisherClient.CreateAsync(topicName);
+        GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
+        
+        _publisherClient = await new PublisherClientBuilder
+        {
+            TopicName = topicName,
+            Credential = credential
+        }.BuildAsync();
         return _publisherClient;
     }
 

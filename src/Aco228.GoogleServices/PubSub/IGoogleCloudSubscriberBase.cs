@@ -1,5 +1,6 @@
 ﻿using Aco228.Common.Models;
 using Aco228.GoogleServices.Models;
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.PubSub.V1;
 using MessagePack;
 
@@ -8,8 +9,8 @@ namespace Aco228.GoogleServices.PubSub;
 public interface IGoogleCloudSubscriberBase<T>
     where T : GoogleCloudMessage
 {
-    Task StartListening(HostMachineContract hostMachineContract, string subscribeId);
-    void StartListeningInBackground(HostMachineContract hostMachineContract, string subscribeId);
+    Task StartListening(HostMachineContract hostMachineContract, string subscriptionId);
+    void StartListeningInBackground(HostMachineContract hostMachineContract);
 }
 
 public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<T>
@@ -29,20 +30,24 @@ public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<
     {
         if (_subscriberClient != null)
             return _subscriberClient;
-        
+    
         var topicName = new TopicName(_googleSetupOptions.ProjectId, TopicName);
         var subscriptionName = new SubscriptionName(_googleSetupOptions.ProjectId, subscriptionId);
-        _subscriberClient = await SubscriberClient.CreateAsync(subscriptionName);
-        var subscriberService = await SubscriberServiceApiClient.CreateAsync();
-        
+    
+        var credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath())
+            .CreateScoped(SubscriberServiceApiClient.DefaultScopes);
+    
+        var subscriberService = await new SubscriberServiceApiClientBuilder
+        {
+            Credential = credential
+        }.BuildAsync();
+    
         try
         {
-            // Try to get it (check if it already exists)
             await subscriberService.GetSubscriptionAsync(subscriptionName);
         }
         catch (Grpc.Core.RpcException e) when (e.StatusCode == Grpc.Core.StatusCode.NotFound)
         {
-            // Create if not found
             await subscriberService.CreateSubscriptionAsync(
                 subscriptionName,
                 topicName,
@@ -50,6 +55,13 @@ public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<
                 ackDeadlineSeconds: 60
             );
         }
+
+        _subscriberClient = await new SubscriberClientBuilder
+        {
+            SubscriptionName = subscriptionName,
+            Credential = credential
+        }.BuildAsync();
+    
         return _subscriberClient;
     }
     
@@ -85,8 +97,9 @@ public abstract class GoogleCloudSubscriberBase<T> : IGoogleCloudSubscriberBase<
         });
     }
 
-    public void StartListeningInBackground(HostMachineContract hostMachine, string subscribeId)
+    public void StartListeningInBackground(HostMachineContract hostMachine)
     {
+        string subscribeId = $"{TopicName}_{hostMachine.MachineName}_{hostMachine.ApplicationName}";
         new Thread(async () =>
         {
             for (;;)
