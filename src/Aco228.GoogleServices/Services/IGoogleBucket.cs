@@ -24,6 +24,7 @@ public interface IGoogleBucket
     
     Task DeleteDirectory(string directoryName, int concurrency = 10);
     Task UploadDirectory(string directoryName, DirectoryInfo directoryInfo, int concurrency = 10);
+    Task DownloadDirectory(string directoryName, DirectoryInfo targetDirectory, int concurrency = 10);
     
     Task<List<BucketFile>> GetAllFiles();
     IAsyncEnumerable<BucketFile> EnumerateAllFiles();
@@ -251,6 +252,47 @@ public abstract class GoogleBucket : IGoogleBucket
                     stream,
                     new UploadObjectOptions { PredefinedAcl = PredefinedObjectAcl.PublicRead }
                 );
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
+    }
+    
+    public async Task DownloadDirectory(string directoryName, DirectoryInfo targetDirectory, int concurrency = 10)
+    {
+        var prefix = directoryName.TrimEnd('/') + "/";
+        var objects = new List<Google.Apis.Storage.v1.Data.Object>();
+    
+        var listRequest = Client.Service.Objects.List(BucketName);
+        listRequest.Prefix = prefix;
+    
+        do
+        {
+            var response = await listRequest.ExecuteAsync();
+            if (response.Items != null)
+                objects.AddRange(response.Items);
+            listRequest.PageToken = response.NextPageToken;
+        } while (listRequest.PageToken != null);
+
+        using var semaphore = new SemaphoreSlim(concurrency);
+
+        var tasks = objects.Select(async obj =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                var relativePath = obj.Name.Substring(prefix.Length).Replace("/", Path.DirectorySeparatorChar.ToString());
+                if (string.IsNullOrEmpty(relativePath)) return;
+
+                var localPath = Path.Combine(targetDirectory.FullName, relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
+
+                using var stream = File.Create(localPath);
+                await Client.DownloadObjectAsync(BucketName, obj.Name, stream);
             }
             finally
             {
