@@ -1,7 +1,10 @@
 ﻿using Aco228.Common.Models;
 using Aco228.GoogleServices.Models;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Drive.v3;
 using Google.Apis.Http;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
 using Google.Cloud.SecretManager.V1;
 using Google.Cloud.Storage.V1;
 
@@ -11,6 +14,8 @@ public interface IGoogleClientProvider : ISingleton
 {
     HttpClient GetGoogleHttpClient();
     StorageClient GetStorageClient();
+    SheetsService GetSheetsClient();
+    DriveService GetDriveClient();
     SecretManagerServiceClient CreateSecretClient();
 }
 
@@ -35,6 +40,26 @@ public class GoogleClientProvider : IGoogleClientProvider
         GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
         var storage = StorageClient.Create(credential);
         return storage;
+    }
+
+    public SheetsService GetSheetsClient()
+    {
+        GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
+        var service = new SheetsService(new BaseClientService.Initializer
+        {
+            HttpClientInitializer = credential,
+        });
+        return service;
+    }
+
+    public DriveService GetDriveClient()
+    {
+        GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
+        var service = new DriveService(new BaseClientService.Initializer
+        {
+            HttpClientInitializer = credential,
+        });
+        return service;
     }
 
     public SecretManagerServiceClient CreateSecretClient()
