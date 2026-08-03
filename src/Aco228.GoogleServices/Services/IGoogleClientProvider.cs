@@ -7,6 +7,7 @@ using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Cloud.SecretManager.V1;
 using Google.Cloud.Storage.V1;
+using Google.Cloud.Translation.V2;
 
 namespace Aco228.GoogleServices.Services;
 
@@ -17,6 +18,7 @@ public interface IGoogleClientProvider : ISingleton
     SheetsService GetSheetsClient();
     DriveService GetDriveClient();
     SecretManagerServiceClient CreateSecretClient();
+    Task<TranslationClient> CreateTranslationClient();
 }
 
 public class GoogleClientProvider : IGoogleClientProvider
@@ -59,6 +61,13 @@ public class GoogleClientProvider : IGoogleClientProvider
         {
             HttpClientInitializer = credential,
         });
+        return service;
+    }
+
+    public async Task<TranslationClient> CreateTranslationClient()
+    {
+        GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
+        var service = await TranslationClient.CreateAsync(credential);
         return service;
     }
 
