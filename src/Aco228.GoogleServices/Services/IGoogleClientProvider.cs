@@ -5,6 +5,7 @@ using Google.Apis.Drive.v3;
 using Google.Apis.Http;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
+using Google.Cloud.BigQuery.V2;
 using Google.Cloud.SecretManager.V1;
 using Google.Cloud.Storage.V1;
 using Google.Cloud.Translation.V2;
@@ -13,12 +14,15 @@ namespace Aco228.GoogleServices.Services;
 
 public interface IGoogleClientProvider : ISingleton
 {
+    string ProjectId { get; }
+    GoogleSetupOptions Setup { get; }
     HttpClient GetGoogleHttpClient();
     StorageClient GetStorageClient();
     SheetsService GetSheetsClient();
     DriveService GetDriveClient();
     SecretManagerServiceClient CreateSecretClient();
     Task<TranslationClient> CreateTranslationClient();
+    BigQueryClient GetBigQueryClient();
 }
 
 public class GoogleClientProvider : IGoogleClientProvider
@@ -29,7 +33,10 @@ public class GoogleClientProvider : IGoogleClientProvider
     {
         _googleSetupOptions = googleSetupOptions;
     }
-    
+
+    public string ProjectId => _googleSetupOptions.ProjectId;
+    public GoogleSetupOptions Setup => _googleSetupOptions;
+
     public HttpClient GetGoogleHttpClient()
     {
         GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
@@ -81,4 +88,12 @@ public class GoogleClientProvider : IGoogleClientProvider
 
         return builder.Build();
     }
+
+    public BigQueryClient GetBigQueryClient()
+    {
+        GoogleCredential credential = GoogleCredential.FromFile(_googleSetupOptions.GetGoogleCredentialsPath());
+        var client = BigQueryClient.Create(_googleSetupOptions.ProjectId, credential);
+        return client;
+    }
+
 }

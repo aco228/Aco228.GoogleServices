@@ -3,8 +3,10 @@ namespace Aco228.GoogleServices.Models;
 
 public class GoogleSetupOptions
 {
-    public string ProjectId { get; set; }
-    public string ServiceAccountCredentialsPath { get; set; }
+    public required string ProjectId { get; set; }
+    public required string BillingId { get; set; }
+    public required string BillingDatasetId { get; set; }
+    public required string ServiceAccountCredentialsPath { get; set; }
 
     public string GetGoogleCredentialsPath()
     {
