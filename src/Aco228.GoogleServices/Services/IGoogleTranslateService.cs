@@ -5,7 +5,7 @@ namespace Aco228.GoogleServices.Services;
 
 public interface IGoogleTranslateService : ITransient
 {
-    Task<string?> Translate(string text, string sourceLanguage, string targetLanguage, bool importantText = false);
+    Task<string?> Translate(string? text, string sourceLanguage, string targetLanguage, bool importantText = false);
 }
 
 public class GoogleTranslateService : IGoogleTranslateService
@@ -17,7 +17,7 @@ public class GoogleTranslateService : IGoogleTranslateService
         _googleClientProvider = googleClientProvider;
     }
 
-    public async Task<string?> Translate(string text, string sourceLanguage, string targetLanguage, bool importantText = false)
+    public async Task<string?> Translate(string? text, string sourceLanguage, string targetLanguage, bool importantText = false)
     {
         try
         {
