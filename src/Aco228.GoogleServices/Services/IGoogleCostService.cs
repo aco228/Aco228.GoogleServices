@@ -21,7 +21,7 @@ public class GoogleCostService : IGoogleCostService
         _client = googleClientProvider.GetBigQueryClient();
         _billingId = googleClientProvider.Setup.BillingId.Replace("-", "_");
         _billingDatasetId = googleClientProvider.Setup.BillingDatasetId;
-        _billingTable = $"{googleClientProvider.ProjectId}.{_billingDatasetId}.gcp_billing_export_v1_{_billingId}";
+        _billingTable = $"{googleClientProvider.ProjectId}.{_billingDatasetId}.gcp_billing_export_resource_v1_{_billingId}";
     }
     
 
