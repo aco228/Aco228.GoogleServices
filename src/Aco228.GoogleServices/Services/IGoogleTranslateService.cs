@@ -31,8 +31,8 @@ public class GoogleTranslateService : IGoogleTranslateService
             var split = targetLanguage.Split("-");
             var targetLanguageCode = split.First().ToLower() + (split.Length == 1 ? "" : $"-{split[1]}");
             var translationResult = importantText 
-                ? await client.TranslateTextAsync(text, targetLanguageCode, sourceLanguage.ToLower(), model: TranslationModel.Base)
-                : await client.TranslateTextAsync(text, targetLanguageCode, sourceLanguage.ToLower(), model: TranslationModel.NeuralMachineTranslation);
+                ? await client.TranslateTextAsync(text, targetLanguageCode, sourceLanguage.ToLower(), model: TranslationModel.NeuralMachineTranslation)
+                : await client.TranslateTextAsync(text, targetLanguageCode, sourceLanguage.ToLower(), model: TranslationModel.Base);
 
             return translationResult?.TranslatedText;
         }

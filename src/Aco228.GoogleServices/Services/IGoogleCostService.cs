@@ -1,29 +1,50 @@
+using Aco228.AIGen.Documents;
+using Aco228.AIGen.Services;
 using Aco228.Common.Models;
+using Aco228.MongoDb.Services;
 using Google.Cloud.BigQuery.V2;
 
 namespace Aco228.GoogleServices.Services;
 
-public interface IGoogleCostService : ITransient
+public interface IGoogleCostService : IAIGenCostService, ITransient
 {
-    Task Run();
 }
 
-public class GoogleCostService : IGoogleCostService
+public class GoogleCostService : AiGenCostBaseService, IGoogleCostService
 {
     private readonly BigQueryClient _client;
     private readonly string _billingTable;
     private readonly string _billingId;
     private readonly string _billingDatasetId;
     
-    public GoogleCostService(
-        IGoogleClientProvider googleClientProvider)
+    public GoogleCostService(IMongoRepo<CostDocument> costRepo, IGoogleClientProvider googleClientProvider) : base(costRepo)
     {
         _client = googleClientProvider.GetBigQueryClient();
         _billingId = googleClientProvider.Setup.BillingId.Replace("-", "_");
         _billingDatasetId = googleClientProvider.Setup.BillingDatasetId;
         _billingTable = $"{googleClientProvider.ProjectId}.{_billingDatasetId}.gcp_billing_export_resource_v1_{_billingId}";
     }
-    
+
+    public override string ProviderName => "Google";
+    protected override async Task<List<CostDocumentElement>> FillData(DateTime dateUtc)
+    {
+        var res = await GetCostByComponentForDay(_client, _billingTable, dateUtc);
+        var result = new List<CostDocumentElement>();
+        foreach (var costRow in res)
+        {
+            if (costRow.Cost < 0.01)
+                continue;
+            
+            result.Add(new()
+            {
+                Name = costRow.Sku,
+                Count = 1,
+                Spend = costRow.Cost,
+            });
+        }
+
+        return result;
+    }
 
     public async Task Run()
     {
@@ -67,7 +88,7 @@ public class GoogleCostService : IGoogleCostService
             {
                 Service = row["service"]?.ToString() ?? "",
                 Sku = row["sku"]?.ToString() ?? "",
-                Cost = Convert.ToDecimal(row["cost"]),
+                Cost = Convert.ToDouble(row["cost"]),
                 Currency = row["currency"]?.ToString() ?? ""
             });
         }
@@ -78,7 +99,7 @@ public class GoogleCostService : IGoogleCostService
     {
         public string Service { get; set; }
         public string Sku { get; set; }
-        public decimal Cost { get; set; }
+        public double Cost { get; set; }
         public string Currency { get; set; }
     }
 }
