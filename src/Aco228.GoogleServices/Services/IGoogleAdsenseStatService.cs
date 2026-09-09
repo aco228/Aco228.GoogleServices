@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Aco228.Common.Models;
+using Aco228.GoogleServices.Models;
 using Google.Apis.Adsense.v2;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
@@ -9,14 +10,14 @@ using Google.Apis.Util;
 
 namespace Aco228.GoogleServices.Services;
 
-public interface IGoogleAdsenseStatManager : ITransient
+public interface IGoogleAdsenseStatService : ITransient
 {
-    Task PullStats(string tokenJson, string clientId, string clientSecret, string adsensePubAccountId);
+    IAsyncEnumerable<AdsenseStatReportEntry> PullStats(string tokenJson, string clientId, string clientSecret, string adsensePubAccountId, DateTime date);
 }
 
-public class GoogleAdsenseStatManager : IGoogleAdsenseStatManager
+public class GoogleAdsenseStatService : IGoogleAdsenseStatService
 {
-    public async Task PullStats(string tokenJson, string clientId, string clientSecret, string adsensePubAccountId)
+    public async IAsyncEnumerable<AdsenseStatReportEntry> PullStats(string tokenJson, string clientId, string clientSecret, string adsensePubAccountId, DateTime date)
     {
         var doc = JsonDocument.Parse(tokenJson).RootElement;
         var tokenResponse = new TokenResponse
@@ -56,7 +57,6 @@ public class GoogleAdsenseStatManager : IGoogleAdsenseStatManager
             new[]
             {
                 AccountsResource.ReportsResource.GenerateRequest.DimensionsEnum.DATE,
-                AccountsResource.ReportsResource.GenerateRequest.DimensionsEnum.CUSTOMCHANNELID,
                 AccountsResource.ReportsResource.GenerateRequest.DimensionsEnum.CUSTOMCHANNELNAME,
                 AccountsResource.ReportsResource.GenerateRequest.DimensionsEnum.COUNTRYCODE,
             });
@@ -69,7 +69,7 @@ public class GoogleAdsenseStatManager : IGoogleAdsenseStatManager
                 AccountsResource.ReportsResource.GenerateRequest.MetricsEnum.IMPRESSIONS
             });
 
-        var day = new DateOnly(2026, 7, 22);
+        var day = new DateOnly(date.Year, date.Month, date.Day);
         request.StartDateYear = day.Year;
         request.StartDateMonth = day.Month;
         request.StartDateDay = day.Day;
@@ -77,24 +77,33 @@ public class GoogleAdsenseStatManager : IGoogleAdsenseStatManager
         request.EndDateMonth = day.Month;
         request.EndDateDay = day.Day;
 
-        var result = await request.ExecuteAsync();
+        var response = await request.ExecuteAsync();
 
-        var headerNames = result.Headers.Select(h => h.Name).ToList();
-        if (result.Rows != null)
+        var headerNames = response.Headers.Select(h => h.Name).ToList();
+        
+        if (response.Rows != null)
         {
-            foreach (var row in result.Rows)
+            foreach (var row in response.Rows)
             {
                 var cellValues = row.Cells.Select(c => c.Value).ToList();
                 var map = headerNames
                     .Zip(cellValues, (h, v) => new { Header = h, Value = v })
                     .ToDictionary(x => x.Header, x => x.Value);
                 
-                string date = map.GetValueOrDefault("DATE")?.ToString() ?? "";
+                string mapDate = map.GetValueOrDefault("DATE")?.ToString() ?? "";
                 string channelName = map.GetValueOrDefault("CUSTOM_CHANNEL_NAME")?.ToString() ?? "";
-                string channelId = map.GetValueOrDefault("CUSTOM_CHANNEL_ID")?.ToString() ?? "";
                 string earnings = map.GetValueOrDefault("ESTIMATED_EARNINGS")?.ToString() ?? "0";
                 string clicks = map.GetValueOrDefault("CLICKS")?.ToString() ?? "0";
-                int a = 0;
+                string countryCode = map.GetValueOrDefault("COUNTRY_CODE")?.ToString() ?? "0";
+                
+                yield return new()
+                {
+                    ChannelId = channelName,
+                    Clicks = int.TryParse(clicks, out var click) ? click : 0,
+                    CountryCode = countryCode,
+                    Revenue = double.TryParse(earnings, out var revenue) ? revenue : 0,
+                    Date = mapDate,
+                };
             }
         }
         else
