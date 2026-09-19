@@ -76,6 +76,8 @@ public class GoogleAdsenseStatService : IGoogleAdsenseStatService
         request.EndDateYear = day.Year;
         request.EndDateMonth = day.Month;
         request.EndDateDay = day.Day;
+        request.CurrencyCode = "USD";
+        request.ReportingTimeZone = AccountsResource.ReportsResource.GenerateRequest.ReportingTimeZoneEnum.ACCOUNTTIMEZONE;
 
         var response = await request.ExecuteAsync();
 
